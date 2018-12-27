@@ -28,5 +28,25 @@ houseRouter.route('/')
 // Last line has ';', the Route contains all the methods!
 
 
-module.exports = houseRouter;
+houseRouter.route('/:houseId')
+    .all((req, res, next) => {
+        res.statusCode = 200;
+        res.setHeader('Content-Type', 'text/html');
+        next();
+    })
+    .get((req, res, next) => {
+        res.end(`This is the house of ${req.params.houseId}`)
+    })
+    .post((req, res, next) => {
+        res.statusCode = 405;
+        res.end(`Cannot add house ${req.body.name} to an id! Error 405: Method Not Allowed`);
+    })
+    .put((req, res, next) => {
+        res.end(`Changed house with id ${req.params.houseId} to ${req.body.name}`);
+    })
+    .delete((req, res, next) => {
+        res.end(`Deleting house ${req.params.houseId}`);
+    });
 
+
+module.exports = houseRouter;
