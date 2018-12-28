@@ -6,6 +6,6 @@ Packages Used -
 - body-parser
 - morgan
 
-To start,<br>
-```npm install --save``` to install required packages.<br>
-```npm start``` to run server at htttp://localhost:3000/
+### To start,<br>
+-  To install required packages,<br> ```npm install --save```
+-  To run server at http://localhost:3000/ ,<br> ```npm start```
