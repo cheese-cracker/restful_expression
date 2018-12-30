@@ -15,8 +15,12 @@ app.use(morgan('dev'));
 app.use(express.static(__dirname+'/templates'));
 
 const houseRouter = require('./routes/houseRouter');
-app.use('/houses', houseRouter);
+const userRouter = require('./routes/userRouter');
+const indexRouter = require('./routes/indexRouter');
 
+app.use('/house', houseRouter);
+app.use('/user', userRouter);
+app.use('/index', indexRouter);
 
 // next is for middleware
 app.use((req, res, next) => {

@@ -10,6 +10,7 @@ houseRouter.route('/')
     .all((req, res, next) => {
         res.statusCode = 200;
         res.setHeader('Content-Type', 'text/html');
+        // Content-Type is a param that sets content response, text-html is seperate!
         next();
     })
     .get((req, res, next) => {
