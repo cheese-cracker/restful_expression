@@ -2,13 +2,24 @@
 const express = require('express');
 const http = require('http');
 const morgan = require('morgan');
-// const body_parser = require('body-parser');
+const mongoose = require('mongoose');
 
+// Local Imports
+const Houses = require('./models/houses.js');
 
 // Server Details and Main part
 const hostname = 'localhost';
 const port = 3000;
 const app = express();
+
+// MongoDB Connection
+const url = 'mongodb://localhost:27017/WareHounds'
+
+mongoose.connect(url, { useNewUrlParser: true })
+    .then((db) => {
+        console.log('Connected to MongoDB server!');
+})
+    .catch((err) => { console.log(err); });
 
 // Modules for Express and Static Pages
 app.use(morgan('dev'));
