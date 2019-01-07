@@ -35,7 +35,7 @@ houseRouter.route('/')
     })
     .put((req, res, next) => {
         res.statusCode = 405;
-        res.end('Error 405: PUT Method Not Supported!');
+        res.end('Error 405: PUT Method Not Supported! House should be specified');
         console.log('Error 405: PUT Method Not Allowed');
     })
     .delete((req, res, next) => {
@@ -86,6 +86,73 @@ houseRouter.route('/:houseId')
             .catch((err) => next(err));
         console.log(`Deleting house ${req.params.houseId}`);
     });
+
+
+// Add Room routes too!
+houseRouter.route('/:houseId/room/')
+    .all((req, res, next) => {
+        res.statusCode = 200;
+        res.setHeader('Content-Type', 'application/json');
+        // Content-Type is a param that sets content response, text-html is seperate!
+        next();
+    })
+    .get((req, res, next) => {
+        Houses.findById(req.params.houseId)
+            .then((house) => {
+                if(house != null){
+                    res.json(house.rooms);
+                    console.log('These are the available rooms!');
+                }else{
+                    erR = new Error(`House ${req.params.houseId} does not exist`);
+                    res.statusCode = 404;
+                    return next(erR);
+                }
+            }, (err) => next(err))
+            .catch((err) => next(err));
+        // Letting error pass this time
+    })
+    .post((req, res, next) => {
+        Houses.findByIdAndUpdate(req.params.houseId)
+            .then((house) => {
+                if(house != null){
+                    house.rooms.push(req.body)
+                    house.save().then((house) =>{
+                        res.json(house);
+                        console.log(`The room ${req.body.name} added successfully to house ${req.params.houseId}!`);
+                    }).catch((err) => next(err))
+                }else{
+                    erR = new Error(`House ${req.params.houseId} does not exist`);
+                    res.statusCode = 404;
+                    return next(erR);
+                }
+            }, (err) => next(err))
+            .catch((err) => next(err));
+    })
+    .put((req, res, next) => {
+        res.statusCode = 405;
+        res.end('Error 405: PUT Method Not Supported! Room must be specified!');
+        console.log('Error 405: PUT Method Not Allowed');
+    })
+    .delete((req, res, next) => {
+        Houses.findByIdAndUpdate(req.params.houseId)
+            .then((haus) => {
+                if (haus != null){
+                    haus.rooms = [];
+                    haus.save().then((haus) => {
+                        res.json(haus);
+                        console.log(`All rooms of house ${req.params.houseId} are deleted!`);
+                    }).catch((e) => next(e));
+                } else {
+                    res.statusCode = 404;
+                    erR = new Error(`House ${req.params.houseId} does not exist`);
+                    return next(erR);
+                }
+            }, (err) => next(err))
+            .catch((err) => next(err));
+        console.log('ALL ENTRIES ARE BEING DELETED!');
+    });
+
+
 
 
 module.exports = houseRouter;
