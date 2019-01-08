@@ -22,15 +22,15 @@ houseRouter.route('/')
                 console.log('These are the available houses!');
                 // js array object as res
             }, (err) => next(err))
+            // Error parameter above seems kinda optional
             .catch((err) => next(err));
-        // Letting error pass this time
     })
     .post((req, res, next) => {
         Houses.create(req.body)
             .then((created) => {
                 res.json(created);
                 console.log(`The house ${req.body.name} is successfully put for rent!`);
-            }, (err) => next(err))
+            })
             .catch((err) => next(err));
     })
     .put((req, res, next) => {
@@ -42,8 +42,7 @@ houseRouter.route('/')
         Houses.remove({})
             .then((rres) => {
                 res.json(rres);
-            }, (err) => next(err))
-            .catch((err) => next(err));
+            }).catch((err) => next(err));
         console.log('ALL ENTRIES ARE BEING DELETED!');
     });
 // Last line has ';', the Route contains all the methods!
@@ -66,7 +65,7 @@ houseRouter.route('/:houseId')
     .post((req, res, next) => {
         res.statusCode = 405;
         res.end('Error 405: POST Method Not Supported');
-        console.log(`Cannot add house ${req.body.name} to an id! Error 405: Method Not Allowed`);
+        console.log(`Error 405: Method Not Allowed! Cannot add house ${req.body.name} to an id!`);
     })
     .put((req, res, next) => {
         Houses.findByIdAndUpdate(req.params.houseId, {
@@ -112,7 +111,7 @@ houseRouter.route('/:houseId/room/')
         // Letting error pass this time
     })
     .post((req, res, next) => {
-        Houses.findByIdAndUpdate(req.params.houseId)
+Houses.findByIdAndUpdate(req.params.houseId)
             .then((house) => {
                 if(house != null){
                     house.rooms.push(req.body)
@@ -127,6 +126,7 @@ houseRouter.route('/:houseId/room/')
                 }
             }, (err) => next(err))
             .catch((err) => next(err));
+
     })
     .put((req, res, next) => {
         res.statusCode = 405;
@@ -149,10 +149,99 @@ houseRouter.route('/:houseId/room/')
                 }
             }, (err) => next(err))
             .catch((err) => next(err));
-        console.log('ALL ENTRIES ARE BEING DELETED!');
     });
 
 
+// Add Rooms with roomId
+houseRouter.route('/:houseId/room/:roomId')
+    .all((req, res, next) => {
+        res.statusCode = 200;
+        res.setHeader('Content-Type', 'application/json');
+        // Content-Type is a param that sets content response, text-html is seperate!
+        next();
+    })
+    .get((req, res, next) => {
+        Houses.findById(req.params.houseId)
+            .then((house) => {
+                if(house != null){
+                    room = house.rooms.id(req.params.roomId);
+                    // room = null;
+                    // for(var i = 0; i < house.rooms.length; i++){
+                    //     if(req.params.roomId == house.rooms[i]._id){
+                    //         room = house.rooms[i];
+                    //     }
+                    // }
+                    if(room != null){
+                        res.json(room);
+                        console.log(`Room: ${req.params.roomId}`);
+                    }else {
+                        erR = new Error(`Room ${req.params.roomId} not in house ${req.params.houseId}`);
+                        res.statusCode = 404;
+                        return next(erR);
+                        // return is to pass directly to catch(e)
+                    }
+                }else{
+                    erR = new Error(`House ${req.params.houseId} does not exist`);
+                    res.statusCode = 404;
+                    return next(erR);
+                }
+            }, (err) => next(err))
+            .catch((err) => next(err));
+        // Letting error pass this time
+    })
+    .post((req, res, next) => {
+        res.statusCode = 405;
+        res.end(`ERROR 405: POST Method Not Supported! Cannot add room ${req.body.type} to specific id!`);
+        console.log('Error 405: POST Method Not Allowed');
+    })
+    .put((req, res, next) => {
+        Houses.findByIdAndUpdate(req.params.houseId).then((haus) => {
+            if(haus != null && haus.rooms.id(req.params.roomId) != null){
+                room = haus.rooms.id(req.params.roomId);
+                // Since Rooms Schema is not made Model and exported, manually updating
+                // Note that 'type' cannot be changed (since that would change room itself!
+                if(req.body.description != null){
+                    room.description = req.body.description;
+                }
+                if(req.body.area != null){
+                    room.area = req.body.area;
+                }
+                haus.save().then((haus) => {
+                    res.json(haus);
+                    console.log(`Room ${req.params.roomId} changed in house ${req.params.houseId}!`);
+                }).catch((e) => next(e));
+            } else if(haus != null){
+                erR = new Error(`Room ${req.params.roomId} does not exist in house ${req.params.houseId}!`);
+                res.statusCode =  404;
+                return next(erR);
+            }else {
+                erR = new Error(`House ${req.params.houseId} does not exist`);
+                res.statusCode = 404;
+                return next(erR);
+            }
+        }).catch((err) => next(err));
+    })
+    .delete((req, res, next) => {
+        Houses.findByIdAndUpdate(req.params.houseId)
+            .then((haus) => {
+                if (haus != null && haus.rooms.id(req.params.roomId) != null){
+                    haus.rooms.id(req.params.roomId).remove();
+                    haus.save().then((haus) => {
+                        res.json(haus);
+                        console.log(`Room ${req.params.roomId} has been deleted from house ${req.params.houseId}!`);
+                    }).catch((e) => next(e));
+                } else if(haus != null){
+                    erR = new Error(`Room ${req.params.roomId} does not exist in house ${req.params.houseId}!`);
+                    res.statusCode =  404;
+                    return next(erR);
+                } else {
+                    res.statusCode = 404;
+                    erR = new Error(`House ${req.params.houseId} does not exist`);
+                    return next(erR);
+                }
+            }, (err) => next(err))
+            .catch((err) => next(err));
+    });
 
 
 module.exports = houseRouter;
