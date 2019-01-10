@@ -29,6 +29,36 @@ const houseRouter = require('./routes/houseRouter');
 const userRouter = require('./routes/userRouter');
 const indexRouter = require('./routes/indexRouter');
 
+
+// Add basic authentication
+function authify (req, res, next){
+    console.log(req.headers);
+    var authHeader = req.headers.authorization;
+    if(!authHeader){
+        erR = new Error('Unauthorized Entry: Please Login to authenticate!');
+        res.statusCode = 404;
+        res.setHeader('WWW-Authenticate', 'Basic');
+        console.log('Unauth 1');
+        return next(erR);
+    }
+
+    var auth = new Buffer.from(authHeader.split(' ')[1], 'base64').toString();
+    var userPass = auth.split(':');
+    if(userPass[0] === 'admin' && userPass[1] === 'pass'){
+        console.log('Authenticated!');
+        next();
+    }else{
+        var erR = new Error('Incorrect Authentication: Login with appropriate username and password!');
+        res.statusCode = 401;
+        res.setHeader('WWW-Authenticate', 'Basic');
+        console.log('Unauth 2');
+        return next(erR);
+    }
+}
+
+
+app.use(authify);
+
 app.use('/house', houseRouter);
 app.use('/user', userRouter);
 app.use('/index', indexRouter);
