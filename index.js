@@ -3,6 +3,7 @@ const express = require('express');
 const http = require('http');
 const morgan = require('morgan');
 const mongoose = require('mongoose');
+const cookie_parser = require('cookie-parser');
 
 // Local Imports
 const Houses = require('./models/houses.js');
@@ -30,29 +31,40 @@ const userRouter = require('./routes/userRouter');
 const indexRouter = require('./routes/indexRouter');
 
 
+app.use(cookie_parser("This is my Secret Key and I won't tell you"));
+
 // Add basic authentication
 function authify (req, res, next){
-    console.log(req.headers);
-    var authHeader = req.headers.authorization;
-    if(!authHeader){
-        erR = new Error('Unauthorized Entry: Please Login to authenticate!');
-        res.statusCode = 404;
-        res.setHeader('WWW-Authenticate', 'Basic');
-        console.log('Unauth 1');
-        return next(erR);
-    }
+    if(!req.signedCookies.user){
+        var authHeader = req.headers.authorization;
+        if(!authHeader){
+            erR = new Error('Unauthorized Entry: Please Login to authenticate!');
+            res.statusCode = 404;
+            res.setHeader('WWW-Authenticate', 'Basic');
+            return next(erR);
+        }
 
-    var auth = new Buffer.from(authHeader.split(' ')[1], 'base64').toString();
-    var userPass = auth.split(':');
-    if(userPass[0] === 'admin' && userPass[1] === 'pass'){
-        console.log('Authenticated!');
-        next();
+        var auth = new Buffer.from(authHeader.split(' ')[1], 'base64').toString();
+        var userPass = auth.split(':');
+        if(userPass[0] === 'admin' && userPass[1] === 'pass'){
+            console.log('Authenticated!');
+            res.cookie('user', 'admin', {signed: true}); // name-val-signed
+            next();
+        }else{
+            var erR = new Error('Incorrect Authentication: Login with appropriate username and password!');
+            res.statusCode = 401;
+            res.setHeader('WWW-Authenticate', 'Basic');
+            return next(erR);
+        }
     }else{
-        var erR = new Error('Incorrect Authentication: Login with appropriate username and password!');
-        res.statusCode = 401;
-        res.setHeader('WWW-Authenticate', 'Basic');
-        console.log('Unauth 2');
-        return next(erR);
+        if(req.signedCookies.user == 'admin'){
+            next();
+        }else {
+            var err = new Error('This user is UNAUTHORIZED.');
+            res.statusCode = 401;
+            res.setHeader('WWW-Authenticate', 'Basic');
+            return next(erR);
+        }
     }
 }
 
