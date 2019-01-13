@@ -3,7 +3,9 @@ const express = require('express');
 const http = require('http');
 const morgan = require('morgan');
 const mongoose = require('mongoose');
-const cookie_parser = require('cookie-parser');
+// const cookie_parser = require('cookie-parser');
+const session = require('express-session');
+const FileStore = require('session-file-store')(session);
 
 // Local Imports
 const Houses = require('./models/houses.js');
@@ -31,11 +33,22 @@ const userRouter = require('./routes/userRouter');
 const indexRouter = require('./routes/indexRouter');
 
 
-app.use(cookie_parser("This is my Secret Key and I won't tell you"));
+// app.use(cookie_parser("This is my Secret Key and I won't tell you"));
+
+// start session
+app.use(session({
+    name: 'session-id', // ID for user
+    secret: 'This is hidden and you cannot see it',
+    saveUninitialized: false,
+    resave: false, // Changes cookie on every request
+    store: new FileStore()
+}));
+
 
 // Add basic authentication
 function authify (req, res, next){
-    if(!req.signedCookies.user){
+    console.log(req.session);
+    if(!req.session.user){
         var authHeader = req.headers.authorization;
         if(!authHeader){
             erR = new Error('Unauthorized Entry: Please Login to authenticate!');
@@ -48,7 +61,7 @@ function authify (req, res, next){
         var userPass = auth.split(':');
         if(userPass[0] === 'admin' && userPass[1] === 'pass'){
             console.log('Authenticated!');
-            res.cookie('user', 'admin', {signed: true}); // name-val-signed
+            req.session.user = 'admin';
             next();
         }else{
             var erR = new Error('Incorrect Authentication: Login with appropriate username and password!');
@@ -57,11 +70,12 @@ function authify (req, res, next){
             return next(erR);
         }
     }else{
-        if(req.signedCookies.user == 'admin'){
+        if(req.session.user == 'admin'){
+            console.log('Request Session: ', req.session);
             next();
         }else {
             var err = new Error('This user is UNAUTHORIZED.');
-            res.statusCode = 401;
+            res.statusCode = 401;    // res.statusCode and err.status is almost same?
             res.setHeader('WWW-Authenticate', 'Basic');
             return next(erR);
         }
@@ -79,7 +93,7 @@ app.use('/index', indexRouter);
 app.use((req, res, next) => {
     res.statusCode = 200;
     res.setHeader('Content-Type', 'text/html');
-    res.end('<h1> Express Server says "ERROR"!</h1>');
+    res.end('<h1> Express Server says "ERROR" for  wrong address!</h1>');
 });
 
 
